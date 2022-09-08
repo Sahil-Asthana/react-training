@@ -1,20 +1,19 @@
 import React, { useState , useEffect, useRef} from 'react';
-import {Navigate} from 'react-router-dom';
+import {Navigate,useNavigate} from 'react-router-dom';
 import {useSelector,useDispatch} from 'react-redux';
 import UserService from '../services/user.service';
 import Form from "react-validation/build/form";
 import Input from "react-validation/build/input";
 import { updateMe } from '../actions/user';
+import { logout } from '../actions/auth';
 const Profile = () => {
     const {user : currentUser} = useSelector((state) => state.auth);
-    const userName = currentUser.user.name;
-    const userEmail = currentUser.user.email;
     const form = useRef();
     const [name, setName] = useState(currentUser.user.name);
     const [email, setEmail] = useState(currentUser.user.email);
     const [showForm, setShowForm] = useState(false);
-    const [content, setContent] = useState("");
     const dispatch = useDispatch();
+    const navigates = useNavigate();
     const onChangeName = (e) => {
         const name = e.target.value;
         setName(name);
@@ -42,25 +41,17 @@ const Profile = () => {
   useEffect(() => {
     UserService.getUser().then(
       (response) => {
-        //console.log(response.data);
-        setContent(JSON.stringify(response.data));
+        console.log(response.data);
       },
       (error) => {
-        const content =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-        setContent(content);
+        if(error.response && error.response.status){
+          console.log("Token is not valid");
+          return dispatch(logout(navigates));
+        }
       }
     );
-  }, []);
+  }, [dispatch, navigates]);
 
-    //console.log(currentUser);
-    if(!currentUser){
-        return <Navigate to="/login" />;
-    }
     if(!currentUser.user.email_verified_at){
         return <Navigate to = "/request_email_verification"/>
     }
@@ -83,7 +74,7 @@ const Profile = () => {
             </div>
             <div>
             <p>
-                <strong>Email:</strong> {userEmail}
+                <strong>Email:</strong> {currentUser.user.email}
             </p>
             </div>
             <div>

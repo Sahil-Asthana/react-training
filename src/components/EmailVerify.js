@@ -1,5 +1,5 @@
 import React ,{useState,useEffect} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import { emailVerify } from '../actions/auth';
  
 const EmailVerify = () => {
@@ -19,14 +19,13 @@ const EmailVerify = () => {
     .catch(() =>{
         setSuccessful(false);
     });
-   },[]);
+   },[dispatch,token]);
 
    
     return (
         <div className = "col-md-12">
             <div className = "card-container card">
                 <h3>Email Verified!</h3>
-                {/* <button className="btn btn-primary" onClick={handleVerifyEmailRequest}>Verify Email</button> */}
             </div>
         </div>
     )

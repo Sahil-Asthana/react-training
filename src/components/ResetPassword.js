@@ -1,5 +1,5 @@
-import React ,{useState,useEffect, useRef} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
+import React ,{useState, useRef} from 'react';
+import { useDispatch} from 'react-redux';
 import Form from "react-validation/build/form";
 import Input from "react-validation/build/input";
 import { newPassword } from '../actions/auth';

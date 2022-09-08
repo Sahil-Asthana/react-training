@@ -36,7 +36,6 @@ const Login = (props) => {
     e.preventDefault();
     setLoading(true);
     form.current.validateAll();
-    //console.log(checkBtn);
     if (checkBtn.current.context._errors.length === 0) {
       dispatch(login(email, password))
         .then(() => {

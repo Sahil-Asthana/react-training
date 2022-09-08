@@ -1,5 +1,5 @@
 import { LOGIN_SUCCESS, LOGIN_FAIL, REGISTER_FAIL, REGISTER_SUCCESS, LOGOUT, SET_MESSAGE, EMAIL_SENT_SUCCESS, EMAIL_SENT_FAIL
-,VERIFY_SUCCESS, VERIFY_FAIL, UPDATE, PASSWORD_RESET,PASSWORD_RESET_FAILED} from "./type";
+,VERIFY_SUCCESS, PASSWORD_RESET,PASSWORD_RESET_FAILED} from "./type";
 import AuthService from "../services/auth.service";
 export const register = (name,email,password) => (dispatch) => {
     return AuthService.register(name,email,password).then((response) => {
@@ -50,11 +50,12 @@ export const login = (name, password) => (dispatch) => {
       }
     );
   };
-  export const logout = () => (dispatch) => {
+  export const logout = (navigate) => (dispatch) => {
     AuthService.logout();
     dispatch({
       type: LOGOUT,
     });
+    navigate("/login");
   };
   export const requestVerifyEmail = () => (dispatch) => {
     return AuthService.requestVerifyEmail().then(

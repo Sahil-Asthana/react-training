@@ -44,6 +44,7 @@ const newPassword = (token,email,password,password_confirmation) => {
     const response = axios.post(API_URL+"/password/reset",{token,email,password,password_confirmation});
     return response;
 }
+// eslint-disable-next-line 
 export default {
     register,
     login,
