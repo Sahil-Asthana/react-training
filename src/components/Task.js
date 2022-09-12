@@ -6,8 +6,6 @@ import Form from "react-validation/build/form";
 import { logout } from "../actions/auth";
 import Modal from 'react-bootstrap/Modal';
 import Input from "react-validation/build/input";
-import AssignedChart from "./AssignedChart";
-import CreatorChart from "./CreatorChart";
 import moment from 'moment'
 import { showAllTasks, updateStatus, deleteTask, editTask, createTask } from "../actions/user";
 const required = (value) => {
@@ -20,10 +18,13 @@ const required = (value) => {
     }
 };
 
+let PageSize = 10;
+
 const Task = () => {
     const { user: currentUser } = useSelector(state => state.auth);
     const role = currentUser.user.role;
     const form = useRef();
+    const { message } = useSelector(state => state.message);
     const [info, setInfo] = useState("");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -32,6 +33,7 @@ const Task = () => {
     const [sortMethod, setSortMethod] = useState("");
     const [filterMethod, setFilterMethod] = useState("");
     const [showForm, setShowForm] = useState(false);
+    const [loading, setLoading] = useState(true);
     const navigates = useNavigate();
     const dispatch = useDispatch();
 
@@ -40,16 +42,18 @@ const Task = () => {
     useEffect(() => {
         UserService.showMyTasks().then(
             (response) => {
+                setLoading(false);
                 setInfo((response.data));
             },
             (error) => {
-                if(error.response && error.response.status){
+                if (error.response && error.response.status) {
                     console.log("Token is not valid");
+                    setLoading(false);
                     return dispatch(logout(navigates));
-                  }
+                }
             }
         );
-    }, [dispatch,navigates]);
+    }, [dispatch, navigates]);
 
     const onChangeTitle = (e) => {
         const title = e.target.value;
@@ -68,9 +72,11 @@ const Task = () => {
     const handleFilter = (e) => {
         console.log(e.target.value);
         setFilterMethod(e.target.value);
+        setLoading(true);
         dispatch(showAllTasks(sortMethod, e.target.value, searchParam)).then((response) => {
             console.log(response.data);
             setShowForm(false);
+            setLoading(false);
             setInfo(response.data);
         })
             .catch((error) => {
@@ -81,9 +87,11 @@ const Task = () => {
     const handleSort = (e) => {
         console.log(e.target.value);
         setSortMethod(e.target.value);
+        setLoading(true);
         dispatch(showAllTasks(e.target.value, filterMethod, searchParam)).then((response) => {
             console.log(response.data);
             setShowForm(false);
+            setLoading(false);
             setInfo(response.data);
         })
             .catch((error) => {
@@ -93,12 +101,15 @@ const Task = () => {
     // search a param
     const handleSearch = (e) => {
         e.preventDefault();
+        setLoading(true);
         dispatch(showAllTasks(sortMethod, filterMethod, searchParam)).then((response) => {
             console.log(response.data);
             setShowForm(false);
+            setLoading(false);
             setInfo(response.data);
         })
             .catch((error) => {
+                setLoading(false);
                 console.log(error);
             })
     }
@@ -110,21 +121,26 @@ const Task = () => {
     // to get all tasks for user
     const handleTasks = (e) => {
         console.log(e.target.value);
+        setLoading(true);
         if (e.target.value === "yourTask") {
             UserService.showMyTasks().then(
                 (response) => {
                     setInfo((response.data));
+                    setLoading(false);
                 },
                 (error) => {
                     console.log(error.data);
+                    setLoading(false);
                 })
         }
         else if (e.target.value === "allTasks") {
             dispatch(showAllTasks(sortMethod, filterMethod, searchParam)).then((response) => {
                 console.log(response.data);
+                setLoading(false);
                 setInfo(response.data);
             }).catch((error) => {
                 console.log(error);
+                setLoading(false);
             })
         }
     }
@@ -135,6 +151,7 @@ const Task = () => {
     // to create task
     const handleCreateTask = (e) => {
         e.preventDefault();
+        form.current.validateAll();
         dispatch(createTask(title, description, currentUser.user.id, due_date)).then((response) => {
             console.log(response.data);
             setShowForm(false);
@@ -192,7 +209,6 @@ const Task = () => {
         console.log(new_description);
         dispatch(editTask(id, new_title, new_description, new_date)).then((response) => {
             console.log(response);
-            window.location.reload(true);
         })
             .catch((error) => {
                 console.log(error);
@@ -208,12 +224,8 @@ const Task = () => {
 
     return (
         <div>
-            <div className="chart-div">
-                <AssignedChart info={info} />
-                <CreatorChart info={info} />
-            </div>
-            <div className='drop-menu'>
-                <button className="btn btn-primary" onClick={handleClick}>Create Task</button>
+            <div className="jumbotron">
+                <h3 >Task List</h3>
             </div>
             <Modal show={showForm} onHide={handleClose}>
                 <Modal.Header closeButton>
@@ -258,6 +270,13 @@ const Task = () => {
                         <div className="form-group">
                             <button className="btn btn-primary btn-block">Submit</button>
                         </div>
+                        {message && (
+                            <div className="form-group">
+                                <div className="alert alert-danger" role="alert">
+                                    {message}
+                                </div>
+                            </div>
+                        )}
                     </Form>
                 </Modal.Body>
             </Modal>
@@ -265,7 +284,11 @@ const Task = () => {
             <hr />
             <h3>{currentUser.user.name} Tasks</h3>
             <h4><strong>id : </strong>{currentUser.user.id}</h4>
+            <div className='drop-menu'>
+                <button className="btn btn-primary" onClick={handleClick}>Create Task</button>
+            </div>
             <div className="div-button">
+
                 <div>
                     <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
                         <option defaultValue>Sort By</option>
@@ -292,7 +315,7 @@ const Task = () => {
                     </select>
                 </div>}
             </div>
-            <table className="table table-hover table-primary">
+            { !loading ? <table className="table table-hover table-primary">
                 <thead>
                     <tr>
                         <th>Title</th>
@@ -377,7 +400,7 @@ const Task = () => {
                             ]
                         })}
                     </tbody> : null}
-            </table>
+            </table> : <div className = 'spinner-div'><i className = 'fa fa-circle-o-notch fa-spin spin'></i></div>}
         </div>
     )
 }

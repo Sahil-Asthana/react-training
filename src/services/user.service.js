@@ -29,6 +29,10 @@ const createTask = (title,description,assignee,due_date) =>{
   return axios.post(API_URL+'/create-task', {title,description,assignee,due_date},{headers : authHeader()});
 }
 
+const getUserTask = (id) => {
+  return axios.get(API_URL+'/tasks/'+id, {headers : authHeader()});
+}
+
 const showMyTasks = () => {
     return axios.get(API_URL + "/tasks",{headers : authHeader()});
 }
@@ -52,7 +56,11 @@ const listNotifs = () => {
 }
 
 const deleteNotif = (id) => {
-  return axios.delete(API_URL + '/notif/'+id, {headers: authHeader()})
+  return axios.delete(API_URL + '/notif/'+id, {headers: authHeader()});
+}
+
+const clearNotif = () => {
+  return axios.delete(API_URL + '/clear-notif', {headers: authHeader()});
 }
 // eslint-disable-next-line 
 export default {
@@ -63,6 +71,7 @@ export default {
   createUser,
   updateUser,
   createTask,
+  getUserTask,
   showMyTasks,
   showAllTasks,
   updateStatus,
@@ -70,4 +79,5 @@ export default {
   editTask,
   listNotifs,
   deleteNotif,
+  clearNotif,
 };

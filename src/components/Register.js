@@ -7,6 +7,8 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { isEmail } from "validator";
 import { register } from "../actions/auth";
 import { Navigate } from "react-router-dom";
+import Alert from 'react-bootstrap/Alert';
+
 const required = (value) => {
   if (!value) {
     return (
@@ -51,6 +53,8 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [successful, setSuccessful] = useState(false);
   const { message } = useSelector(state => state.message);
+  const [human, setHuman] = useState(false);
+  const [show, setShow] = useState(false);
   const dispatch = useDispatch();
   const onChangeName = (e) => {
     const name = e.target.value;
@@ -68,18 +72,19 @@ const Register = () => {
     e.preventDefault();
     setSuccessful(false);
     form.current.validateAll();
-    if (checkBtn.current.context._errors.length === 0) {
+    if (checkBtn.current.context._errors.length === 0 && human) {
       dispatch(register(name, email, password))
         .then(() => {
           setSuccessful(true);
         })
         .catch(() => {
+          setHuman(false);
           setSuccessful(false);
         });
     }
   };
-  if(successful){
-    <Navigate to="/request_email_verification"/>
+  if (successful) {
+    <Navigate to="/request_email_verification" />
   };
   return (
     <div className="col-md-12">
@@ -125,7 +130,13 @@ const Register = () => {
                   validations={[required, vpassword]}
                 />
               </div>
-              <ReCAPTCHA sitekey="6Ldo3pohAAAAAIIh7-J_Mtg6-HWAS3HdXpzDfmrM" onChange={(value)=>{console.log(value)}} />
+              <ReCAPTCHA sitekey="6Ldo3pohAAAAAIIh7-J_Mtg6-HWAS3HdXpzDfmrM" onChange={(value) => { console.log(value) }} />
+              <Alert variant="danger" show={show} onClose={() => setShow(false)} dismissible>
+                <Alert.Heading>Error Occurred</Alert.Heading>
+                <p>
+                  Captcha verification failed
+                </p>
+              </Alert>
               <div className="form-group">
                 <button className="btn btn-primary btn-block">Sign Up</button>
               </div>
@@ -133,7 +144,7 @@ const Register = () => {
           )}
           {message && (
             <div className="form-group">
-              <div className={ successful ? "alert alert-success" : "alert alert-danger" } role="alert">
+              <div className={successful ? "alert alert-success" : "alert alert-danger"} role="alert">
                 {message}
               </div>
             </div>

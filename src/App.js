@@ -18,6 +18,8 @@ import { clearMessage } from './actions/messages';
 import { history } from './helpers/history';
 import EmailVerify from "./components/EmailVerify";
 import UserService from "./services/user.service";
+import Pusher from "pusher-js";
+import UserTasks from "./components/UserTasks"
 
 
 const App = () => {
@@ -37,6 +39,16 @@ const App = () => {
   useEffect(()=>{
     UserService.listNotifs().then((response)=>{
     setInfo(response.data);
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher('47e061ae680fadb96900', {
+      cluster: 'ap2'
+    });
+
+    var channel = pusher.subscribe('my-channel-'+currentUser.user.id);
+    channel.bind('my-event', function (data) {
+      alert(JSON.stringify(data.message));
+    });
   }).catch((error)=>{
     console.log(error.data);
   })
@@ -47,9 +59,9 @@ const App = () => {
       <div>
         <nav className="navbar navbar-expand navbar-dark bg-dark">
           <div className="navbar-nav mr-auto">
-            <li className="nav-item">
+            {currentUser && <li className="nav-item">
               <Link to={"/home"} className="nav-link">Home</Link>
-            </li>
+            </li>}
             {(currentUser && currentUser.user.role === "admin") && (
               <li className="nav-item">
                 <Link to={"/user"} className="nav-link"> User</Link>
@@ -84,7 +96,7 @@ const App = () => {
         </nav>
         <div className="container mt-3">
           <Routes>
-            <Route exact path="/" element={<Home />} />
+            <Route exact path="/" element={<Login />} />
             <Route exact path="/home" element={<Home />} />
             <Route exact path="/login" element={<Login />} />
             <Route exact path="/register" element={<Register />} />
@@ -95,6 +107,7 @@ const App = () => {
             <Route exact path="/password_reset" element={<PasswordReset />} />
             <Route exact path="/password/reset" element={<ResetPassword />} />
             <Route exact path="/tasks" element={<Task />} />
+            <Route exact path="/user-tasks" element={<UserTasks />} />
           </Routes>
         </div>
       </div>

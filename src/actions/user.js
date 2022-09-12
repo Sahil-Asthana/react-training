@@ -1,11 +1,16 @@
 import UserService from "../services/user.service";
-import { SET_MESSAGE , UPDATE, REGISTER_FAIL,REGISTER_SUCCESS} from "./type";
+import { SET_MESSAGE , UPDATE, REGISTER_FAIL,REGISTER_SUCCESS, LOGIN_SUCCESS} from "./type";
 export const updateMe = (name,email) => (dispatch) => {
     return UserService.updateMe(name, email).then((data) => {
         dispatch({
             type : UPDATE,
             payload : {user : data}
         });
+        dispatch({
+            type: LOGIN_SUCCESS,
+            payload : {user : data}
+        })
+        Promise.resolve();
         return  data;
     }, (error) => {
         const message = (error.response && error.response.data && error.response.data.message) || 
@@ -64,7 +69,7 @@ export const createUser = (name,email,password, password_confirmation,role) => (
             type: SET_MESSAGE,
             payload : response.data.message
         });
-        return Promise.resolve();
+        return Promise.resolve(response.data);
     }, (error) => {
         const message = (error.response && error.response.data && error.response.data.message) || 
                         error.message || error.toString();
@@ -75,7 +80,7 @@ export const createUser = (name,email,password, password_confirmation,role) => (
             type : SET_MESSAGE,
             payload : message
         });
-        return Promise.reject();
+        return Promise.reject(error);
         })
 }
 
@@ -133,6 +138,25 @@ export const showAllTasks = (sortMethod,filterMethod,searchParam) => (dispatch) 
         });
         return Promise.reject();
     });
+}
+
+export const getUserTask = (id) => (dispatch) => {
+    return UserService.getUserTask(id).then((response)=>{
+        dispatch({
+            type: SET_MESSAGE,
+            payload : response.data
+        });
+        return response;
+    })
+    .catch((error)=>{
+        const message = (error.response && error.response.data && error.response.data.message) || 
+                        error.message || error.toString();
+        dispatch({
+            type : SET_MESSAGE,
+            payload : message
+        });
+        return Promise.reject();
+    })
 }
 
 export const updateStatus = (id,status) => (dispatch) => {

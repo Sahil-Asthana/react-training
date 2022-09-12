@@ -6,22 +6,21 @@ import { useSelector } from 'react-redux';
 
 
 
-const CreatorChart = (props) =>{
-    const {user : currentUser} = useSelector(state=>state.auth)
+const AssignedChart = (props) =>{
     let pendingTask= 0;
     let completedTask = 0;
     let deletedTask = 0;
     let inProgressTask=0;
-    let overdue=0;
+    let overdue =0;
     let flag = true;
     const data = props.info ? props.info : null;
     if(data){
         data.map((item)=>{
-            if(item.status === 'pending' && item.creator === JSON.stringify(currentUser.user.id)) pendingTask+=1;
-            else if(item.status === 'deleted' && item.creator === JSON.stringify(currentUser.user.id)) deletedTask+=1;
-            else if(item.status === 'completed' && item.creator === JSON.stringify(currentUser.user.id)) completedTask+=1;
-            else if(item.status === 'in-progress' && item.creator === JSON.stringify(currentUser.user.id)) inProgressTask+=1;
-            else if(item.status === 'overdue' && item.creator === JSON.stringify(currentUser.user.id)) overdue+=1;
+            if(item.status === 'pending') pendingTask+=1;
+            else if(item.status === 'deleted' ) deletedTask+=1;
+            else if(item.status === 'completed' ) completedTask+=1;
+            else if(item.status === 'in-progress') inProgressTask+=1;
+            else if(item.status === 'overdue') overdue+=1;
             return flag;
         })
     }
@@ -34,7 +33,7 @@ const CreatorChart = (props) =>{
             type: 'pie'
         },
         title: {
-            text: 'Tasks created by you'
+            text: 'Tasks assigned to you'
         },
         tooltip: {
             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
@@ -69,7 +68,7 @@ const CreatorChart = (props) =>{
             }, {
                 name: 'OverDue',
                 y: overdue
-            }
+            },
         ]
         }],
         accessibility: {
@@ -83,4 +82,4 @@ const CreatorChart = (props) =>{
     )
 }
 
-export default CreatorChart;
+export default AssignedChart;

@@ -12,6 +12,7 @@ const AssignedChart = (props) =>{
     let completedTask = 0;
     let deletedTask = 0;
     let inProgressTask=0;
+    let overdue =0;
     let flag = true;
     const data = props.info ? props.info : null;
     if(data){
@@ -20,6 +21,7 @@ const AssignedChart = (props) =>{
             else if(item.status === 'deleted' && item.assignee === currentUser.user.id) deletedTask+=1;
             else if(item.status === 'completed' && item.assignee === currentUser.user.id) completedTask+=1;
             else if(item.status === 'in-progress' && item.assignee === currentUser.user.id) inProgressTask+=1;
+            else if(item.status === 'overdue' && item.assignee === currentUser.user.id) overdue+=1;
             return flag;
         })
     }
@@ -64,6 +66,9 @@ const AssignedChart = (props) =>{
             }, {
                 name: 'In-Progress',
                 y: inProgressTask
+            }, {
+                name: 'OverDue',
+                y: overdue
             }
         ]
         }],

@@ -6,6 +6,8 @@ import Input from "react-validation/build/input";
 import CheckButton from "react-validation/build/button";
 import { login } from "../actions/auth";
 import ReCAPTCHA from "react-google-recaptcha";
+import Alert from "react-bootstrap/Alert";
+
 const required = (value) => {
   if (!value) {
     return (
@@ -23,6 +25,8 @@ const Login = (props) => {
   const [loading, setLoading] = useState(false);
   const { isLoggedIn } = useSelector(state => state.auth);
   const { message } = useSelector(state => state.message);
+  const [human, setHuman] = useState(false);
+  const [show, setShow] = useState(false);
   const dispatch = useDispatch();
   const onChangeEmail = (e) => {
     const email = e.target.value;
@@ -36,16 +40,18 @@ const Login = (props) => {
     e.preventDefault();
     setLoading(true);
     form.current.validateAll();
-    if (checkBtn.current.context._errors.length === 0) {
+    if (checkBtn.current.context._errors.length === 0 && human) {
       dispatch(login(email, password))
         .then(() => {
           props.history.push("/profile");
           window.location.reload();
+
         })
         .catch(() => {
           setLoading(false);
         });
     } else {
+      setShow(true);
       setLoading(false);
     }
   };
@@ -84,7 +90,13 @@ const Login = (props) => {
               validations={[required]}
             />
           </div>
-          <ReCAPTCHA sitekey="6Ldo3pohAAAAAIIh7-J_Mtg6-HWAS3HdXpzDfmrM" onChange={(value)=>{console.log(value)}} />
+          <ReCAPTCHA sitekey="6Ldo3pohAAAAAIIh7-J_Mtg6-HWAS3HdXpzDfmrM" onChange={() => setHuman(true)} />
+          <Alert variant="danger" show={show} onClose={() => setShow(false)} dismissible>
+            <Alert.Heading>Error Occurred</Alert.Heading>
+            <p>
+              Captcha verification failed
+            </p>
+          </Alert>
           <div className="form-group">
             <button className="btn btn-primary btn-block" disabled={loading}>
               {loading && (

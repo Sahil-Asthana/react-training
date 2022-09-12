@@ -6,12 +6,15 @@ import Form from "react-validation/build/form";
 import Input from "react-validation/build/input";
 import { updateMe } from '../actions/user';
 import { logout } from '../actions/auth';
+
 const Profile = () => {
     const {user : currentUser} = useSelector((state) => state.auth);
     const form = useRef();
     const [name, setName] = useState(currentUser.user.name);
     const [email, setEmail] = useState(currentUser.user.email);
+    const [content, setContent] = useState('') 
     const [showForm, setShowForm] = useState(false);
+    const [loading, setLoading] = useState(true);
     const dispatch = useDispatch();
     const navigates = useNavigate();
     const onChangeName = (e) => {
@@ -30,7 +33,9 @@ const Profile = () => {
         e.preventDefault();      
         dispatch(updateMe(name,email))
         .then((response) => {
-              console.log(response);
+              console.log(response.data);
+              setContent(response.data);
+              window.location.reload(true);
         })
         .catch((error) => {
             console.log(error);
@@ -39,13 +44,17 @@ const Profile = () => {
     }
     
   useEffect(() => {
+    setLoading(true);
     UserService.getUser().then(
       (response) => {
         console.log(response.data);
+        setLoading(false);
+        setContent(response.data)
       },
       (error) => {
         if(error.response && error.response.status){
           console.log("Token is not valid");
+          setLoading(false);
           return dispatch(logout(navigates));
         }
       }
@@ -57,29 +66,29 @@ const Profile = () => {
     }
     return (
         <div className='container'>
-            <header className="jumbotron">
+            {!loading ? <div><header className="jumbotron">
                 <h3>
                  Your Profile 
                 </h3>
             </header>
            <div >
             <p>
-                <strong>name:</strong> {currentUser.user.name}
+                <strong>name:</strong> {content.name}
             </p>
             </div>
             <div>
             <p>
-                <strong>Id:</strong> {currentUser.user.id}
+                <strong>Id:</strong> {content.id}
             </p>
             </div>
             <div>
             <p>
-                <strong>Email:</strong> {currentUser.user.email}
+                <strong>Email:</strong> {content.email}
             </p>
             </div>
             <div>
             <button className = "btn btn-primary" onClick={handleForm}>Update profile!</button>
-            </div>
+            </div></div> : <div className = 'spinner-div'><i className = 'fa fa-circle-o-notch fa-spin spin'></i></div>}
             {showForm && 
             <Form onSubmit={handleSubmit} ref={form}>
             <div className="form-group">
@@ -106,7 +115,7 @@ const Profile = () => {
                 <button className="btn btn-primary btn-block">Submit</button>
             </div>
             </Form>}
-        </div>
+        </div> 
     );
 };
 export default Profile;

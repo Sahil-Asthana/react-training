@@ -20,8 +20,10 @@ const required = (value) => {
 const User = () => {
   const { user: currentUser } = useSelector(state => state.auth);
   const form = useRef();
+  const formC = useRef();
   const [info, setInfo] = useState("");
   const [name, setName] = useState("");
+  const { message } = useSelector(state => state.message);
   const [password, setPassword] = useState("");
   const [password_confirmation, setPasswordConfirmation] = useState("");
   const [role, setRole] = useState("");
@@ -32,6 +34,7 @@ const User = () => {
   const [searchParam, setSearchParam] = useState("");
   const [sortMethod, setSortMethod] = useState("");
   const [filterMethod, setFilterMethod] = useState("");
+  const [loading, setLoading] = useState(true);
   //for task
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -78,38 +81,46 @@ const User = () => {
   // For sorting
   const handleSort = (e) => {
     setSortMethod(e.target.value);
+    setLoading(true);
     dispatch(getAllUsers(e.target.value, filterMethod, searchParam)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
+      setLoading(false);
       setInfo(response.data);
     })
       .catch((error) => {
         console.log(error);
+        setLoading(false);
       })
   }
   //for filtering
   const handleFilter = (e) => {
     console.log(e.target.value);
-    // if(e.target.value === 'Apply filter') e.target.value = null;
+    setLoading(true);
     setFilterMethod(e.target.value);
     dispatch(getAllUsers(sortMethod, e.target.value, searchParam)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
+      setLoading(false);
       setInfo(response.data);
     })
       .catch((error) => {
         console.log(error);
+        setLoading(false);
       })
   }
   const handleSearch = (e) => {
     e.preventDefault();
+    setLoading(true);
     dispatch(getAllUsers(sortMethod, filterMethod, searchParam)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
+      setLoading(false);
       setInfo(response.data);
     })
       .catch((error) => {
         console.log(error);
+        setLoading(false);
       })
   }
   // assigning task to user
@@ -121,6 +132,7 @@ const User = () => {
 
   const handleTaskCreation = (e) => {
     e.preventDefault();
+    form.current.validateAll();
     dispatch(createTask(title, description, assignee, due_date)).then((response) => {
       console.log(response.data);
       setCreateTaskFlag(false);
@@ -134,13 +146,14 @@ const User = () => {
   // Get all users
   useEffect(() => {
     UserService.getAllUsers().then((response) => {
-      console.log(response.data);
       setCreateFlag(false);
+      setLoading(false);
       setInfo(response.data);
     })
       .catch((error) => {
-        if(error.response && error.response.status){
+        if (error.response && error.response.status) {
           console.log("Token is not valid");
+          setLoading(false);
           return dispatch(logout(navigates));
         }
       })
@@ -159,13 +172,14 @@ const User = () => {
   // create a user 
   const handleCreate = (e) => {
     e.preventDefault();
+    formC.current.validateAll();
     dispatch(createUser(name, email, password, password_confirmation, role)).then((response) => {
       console.log(response);
       setCreateFlag(false);
       window.location.reload(true);
     })
       .catch((error) => {
-        console.log(error);
+        alert(error.data);
       })
   }
   // delete a user
@@ -177,32 +191,36 @@ const User = () => {
       window.location.reload(true);
     })
       .catch((error) => {
-        console.log(error);
+        alert(error.data);
       })
   }
   // update role of user
   const handleUpdate = (e, id) => {
+    setLoading(true);
     dispatch(updateUser(id, e.target.value)).then((response) => {
+      setLoading(false);
       console.log(response.data);
     })
       .catch((error) => {
-        console.log(error);
+        alert(error.data);
+        setLoading(false);
       })
   }
+  //
 
 
   return (
     <div className="container">
       <div className="jumbotron">
-        <div className="board">{currentUser.user.name} , You have Admin Privileges</div>
+        <h3 >{currentUser.user.name} , You have Admin Privileges</h3>
       </div>
       <button className="btn btn-primary" onClick={handleCreateForm}>Create User</button>
       <Modal show={createFlag} onHide={handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Create Task</Modal.Title>
+          <Modal.Title>Create User</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleCreate} ref={form}>
+          <Form onSubmit={handleCreate} ref={formC}>
             <div className="form-group">
               <label htmlFor="name">Name</label>
               <Input
@@ -211,7 +229,7 @@ const User = () => {
                 name="name"
                 value={name}
                 onChange={onChangeName}
-                validation={[required]}
+                validations={[required]}
               />
             </div>
             <div className="form-group">
@@ -222,7 +240,7 @@ const User = () => {
                 name="email"
                 value={email}
                 onChange={onChangeEmail}
-                validation={[required]}
+                validations={[required]}
               />
             </div>
             <div className="form-group">
@@ -233,7 +251,7 @@ const User = () => {
                 name="password"
                 value={password}
                 onChange={onChangePassword}
-                validation={[required]}
+                validations={[required]}
               />
             </div>
             <div className="form-group">
@@ -244,7 +262,7 @@ const User = () => {
                 name="password_confirmation"
                 value={password_confirmation}
                 onChange={onChangePasswordConfirmation}
-                validation={[required]}
+                validations={[required]}
               />
             </div>
             <div className="form-group">
@@ -255,12 +273,19 @@ const User = () => {
                 name="role"
                 value={role}
                 onChange={onChangeRole}
-                validation={[required]}
+                validations={[required]}
               />
             </div>
             <div className="form-group">
               <button className="btn btn-primary btn-block">Submit</button>
             </div>
+            {message && (
+              <div className="form-group">
+                <div className="alert alert-danger" role="alert">
+                  {message}
+                </div>
+              </div>
+            )}
           </Form>
         </Modal.Body>
       </Modal>
@@ -295,8 +320,8 @@ const User = () => {
             <div className="form-group">
               <label htmlFor="due_date">Due Date</label>
               <Input
-                type="text"
-                className="form-control"
+                type="datetime-local"
+                className="form-control without_ampm"
                 name="due_date"
                 value={due_date}
                 onChange={onChangeDueDate}
@@ -307,6 +332,13 @@ const User = () => {
             <div className="form-group">
               <button className="btn btn-primary btn-block">Submit</button>
             </div>
+            {message && (
+              <div className="form-group">
+                <div className="alert alert-danger" role="alert">
+                  {message}
+                </div>
+              </div>
+            )}
           </Form>
         </Modal.Body>
       </Modal>
@@ -315,7 +347,7 @@ const User = () => {
 
       <div>
         <div className="div-button">
-        {/* <button><i className="fa fa-cog" aria-hidden="true"></i></button>  */}
+          
           <div>
             <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
               <option defaultValue>Sort By</option>
@@ -337,7 +369,7 @@ const User = () => {
             <button className="btn btn-success" onClick={handleSearch}>Search</button>
           </div>
         </div>
-        <table className="table table-hover table-primary">
+       { !loading ? <table className="table table-hover table-primary">
           <thead>
             <tr>
               <th>Id</th>
@@ -355,7 +387,7 @@ const User = () => {
               return [
                 <tr key={item}>
                   <td>{item.id}</td>
-                  <td>{item.name}</td>
+                  <td><a className ='selected-user' href={"/user-tasks?param="+item.id}>{item.name}</a></td>
                   <td>{item.email}</td>
                   <td>
                     <select className="form-select" aria-label="size 3 select example" onChange={(e) => handleUpdate(e, item.id)}>
@@ -373,7 +405,7 @@ const User = () => {
               ]
             })}
           </tbody> : null}
-        </table>
+        </table> : <div className = 'spinner-div'><i className = 'fa fa-circle-o-notch fa-spin spin'></i></div>}
       </div>
     </div>
   );
