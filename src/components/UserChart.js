@@ -33,7 +33,7 @@ const AssignedChart = (props) =>{
             type: 'pie'
         },
         title: {
-            text: 'Tasks assigned to you'
+            text: 'Tasks Analytics for Selected User'
         },
         tooltip: {
             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'

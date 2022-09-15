@@ -7,7 +7,8 @@ import { logout } from "../actions/auth";
 import Modal from 'react-bootstrap/Modal';
 import Input from "react-validation/build/input";
 import moment from 'moment'
-import { showAllTasks, updateStatus, deleteTask, editTask, createTask } from "../actions/user";
+import { showAllTasks, updateStatus, deleteTask, editTask, createTask, bulkDeleteTask } from "../actions/user";
+import Crousel from "./Crousel";
 const required = (value) => {
     if (!value) {
         return (
@@ -23,8 +24,8 @@ let PageSize = 10;
 const Task = () => {
     const { user: currentUser } = useSelector(state => state.auth);
     const role = currentUser.user.role;
+    var id = currentUser.user.id;
     const form = useRef();
-    const { message } = useSelector(state => state.message);
     const [info, setInfo] = useState("");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -34,16 +35,23 @@ const Task = () => {
     const [filterMethod, setFilterMethod] = useState("");
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1000);
+    const [targetTask, setTargetTask] = useState('yourTask');
+    const [selected, setSelected] = useState([]);
+    const [selectFlag, setSelectFlag] = useState(false);
     const navigates = useNavigate();
     const dispatch = useDispatch();
 
     const [inEditMode, setInEditMode] = useState({ status: false, rowKey: null });
 
     useEffect(() => {
-        UserService.showMyTasks().then(
+        dispatch(showAllTasks(sortMethod, filterMethod, searchParam, 1, id)).then(
             (response) => {
                 setLoading(false);
-                setInfo((response.data));
+                console.log(response.data);
+                setLastPage(response.data.last_page);
+                setInfo(response.data.data);
             },
             (error) => {
                 if (error.response && error.response.status) {
@@ -53,7 +61,7 @@ const Task = () => {
                 }
             }
         );
-    }, [dispatch, navigates]);
+    }, []);
 
     const onChangeTitle = (e) => {
         const title = e.target.value;
@@ -73,11 +81,13 @@ const Task = () => {
         console.log(e.target.value);
         setFilterMethod(e.target.value);
         setLoading(true);
-        dispatch(showAllTasks(sortMethod, e.target.value, searchParam)).then((response) => {
+        id = (targetTask === 'yourTask') ? id : null;
+        dispatch(showAllTasks(sortMethod, e.target.value, searchParam, 1, id)).then((response) => {
             console.log(response.data);
             setShowForm(false);
             setLoading(false);
-            setInfo(response.data);
+            setLastPage(response.data.last_page);
+            setInfo(response.data.data);
         })
             .catch((error) => {
                 console.log(error);
@@ -88,11 +98,13 @@ const Task = () => {
         console.log(e.target.value);
         setSortMethod(e.target.value);
         setLoading(true);
-        dispatch(showAllTasks(e.target.value, filterMethod, searchParam)).then((response) => {
+        id = (targetTask === 'yourTask') ? id : null;
+        dispatch(showAllTasks(e.target.value, filterMethod, searchParam, 1, id)).then((response) => {
             console.log(response.data);
             setShowForm(false);
             setLoading(false);
-            setInfo(response.data);
+            setLastPage(response.data.last_page);
+            setInfo(response.data.data);
         })
             .catch((error) => {
                 console.log(error);
@@ -102,11 +114,13 @@ const Task = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         setLoading(true);
-        dispatch(showAllTasks(sortMethod, filterMethod, searchParam)).then((response) => {
+        id = (targetTask === 'yourTask') ? id : null;
+        dispatch(showAllTasks(sortMethod, filterMethod, searchParam, 1, id)).then((response) => {
             console.log(response.data);
             setShowForm(false);
             setLoading(false);
-            setInfo(response.data);
+            setLastPage(response.data.last_page);
+            setInfo(response.data.data);
         })
             .catch((error) => {
                 setLoading(false);
@@ -118,14 +132,68 @@ const Task = () => {
         e.preventDefault();
         setShowForm(!showForm);
     }
+
+    const handlePrevPage = (e) => {
+        if (targetTask === 'yourTask') {
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage - 1, id)).then(
+                (response) => {
+                    setInfo((response.data.data));
+                    setLoading(false);
+                    setCurrentPage(currentPage - 1)
+                },
+                (error) => {
+                    console.log(error.data);
+                    setLoading(false);
+                })
+        }
+        else if (targetTask === "allTasks") {
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage - 1, null)).then((response) => {
+                console.log(response.data);
+                setLoading(false);
+                setInfo(response.data.data);
+                setCurrentPage(currentPage - 1)
+            }).catch((error) => {
+                console.log(error);
+                setLoading(false);
+            })
+        }
+    }
+    const handleNextPage = (e) => {
+        if (targetTask === 'yourTask') {
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage + 1, id)).then(
+                (response) => {
+                    setInfo((response.data.data));
+                    setLoading(false);
+                    setCurrentPage(currentPage + 1);
+                },
+                (error) => {
+                    console.log(error.data);
+                    setLoading(false);
+                })
+        }
+        else if (targetTask === "allTasks") {
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage + 1, null)).then((response) => {
+                console.log(response.data);
+                setLoading(false);
+                setInfo(response.data.data);
+                setCurrentPage(currentPage + 1)
+            }).catch((error) => {
+                ;
+                console.log(error);
+                setLoading(false);
+            })
+        }
+    }
     // to get all tasks for user
     const handleTasks = (e) => {
         console.log(e.target.value);
+        setTargetTask(e.target.value);
         setLoading(true);
         if (e.target.value === "yourTask") {
-            UserService.showMyTasks().then(
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage - 1, id)).then(
                 (response) => {
-                    setInfo((response.data));
+                    setLastPage(response.data.last_page);
+                    setInfo((response.data.data));
                     setLoading(false);
                 },
                 (error) => {
@@ -134,10 +202,11 @@ const Task = () => {
                 })
         }
         else if (e.target.value === "allTasks") {
-            dispatch(showAllTasks(sortMethod, filterMethod, searchParam)).then((response) => {
-                console.log(response.data);
+            dispatch(showAllTasks(sortMethod, filterMethod, searchParam, currentPage, null)).then((response) => {
+                console.log(response.data.data);
                 setLoading(false);
-                setInfo(response.data);
+                setLastPage(response.data.last_page);
+                setInfo(response.data.data);
             }).catch((error) => {
                 console.log(error);
                 setLoading(false);
@@ -222,12 +291,31 @@ const Task = () => {
         onCancel();
     }
 
+    //bulk delete
+    const handleSelected = (id) => {
+
+        if (selected.includes(id)) {
+            var index = selected.indexOf(id);
+            setSelected([...selected.slice(0, index), ...selected.slice(index + 1, selected.length)]);
+            if (selected.length == 1) { setSelectFlag(false); }
+        }
+        else {
+            setSelected(selected => [...selected, id]);
+            setSelectFlag(true);
+        }
+        console.log(selected);
+    }
+
+    const handleBulkDelete = () => {
+        dispatch(bulkDeleteTask(selected)).then((res)=>{
+            console.log(res);
+        }).catch();
+    }
+
     return (
         <div>
-            <div className="jumbotron">
-                <h3 >Task List</h3>
-            </div>
-            <Modal show={showForm} onHide={handleClose}>
+            <Crousel />
+            <Modal show={showForm} onHide={handleClose} aria-labelledby="contained-modal-title-vcenter" centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Create Task</Modal.Title>
                 </Modal.Header>
@@ -270,13 +358,6 @@ const Task = () => {
                         <div className="form-group">
                             <button className="btn btn-primary btn-block">Submit</button>
                         </div>
-                        {message && (
-                            <div className="form-group">
-                                <div className="alert alert-danger" role="alert">
-                                    {message}
-                                </div>
-                            </div>
-                        )}
                     </Form>
                 </Modal.Body>
             </Modal>
@@ -287,120 +368,132 @@ const Task = () => {
             <div className='drop-menu'>
                 <button className="btn btn-primary" onClick={handleClick}>Create Task</button>
             </div>
-            <div className="div-button">
-
-                <div>
-                    <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
-                        <option defaultValue>Sort By</option>
-                        <option value='title'> Title</option>
-                        <option value='created_at'> Recent</option>
-                    </select>
+            <div className='row'>
+                <div className='col-md-12'>
+                    <div className="div-button">
+                        <div>
+                            <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
+                                <option defaultValue>Sort By</option>
+                                <option value='title'> Title</option>
+                                <option value='created_at'> Recent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleFilter}>
+                                <option defaultValue>Apply filter</option>
+                                <option value='pending'> Pending</option>
+                                <option value='in-progress'> In Progress</option>
+                                <option value='deleted_at'> Deleted Tasks</option>
+                            </select>
+                        </div>
+                        <div className="searchItem">
+                            <input className="searchBox" value={searchParam} onChange={(event) => setSearchParam(event.target.value)} placeholder="Search here" />
+                            <button className="btn btn-success" onClick={handleSearch}>Search</button>
+                        </div>
+                        {(role === 'admin') && <div>
+                            <select className="form-select  selected-form" aria-label="size 3 select example" onChange={handleTasks}>
+                                <option value="yourTask">Your Tasks</option>
+                                <option value='allTasks'> All Tasks</option>
+                            </select>
+                        </div>}
+                    </div>
+                    {!loading ? <div style={{ overflowX: 'scroll' }}><table className="table table-hover table-dark">
+                        <thead className='table-light'>
+                            <tr>
+                                <th>Select</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Creator</th>
+                                <th>Assignee</th>
+                                <th>Due Date</th>
+                                <th>Actions</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        {info ?
+                            <tbody>
+                                {info.map((item) => {
+                                    return [
+                                        <tr key={item}>
+                                            <td>{item.status == 'deleted' ? <input type='checkbox' disabled/>
+                                                :<input type='checkbox' onChange={()=>handleSelected(item.id)}/>}</td>
+                                            <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
+                                                <input value={title} className="edit-form"
+                                                    onChange={(event) => setTitle(event.target.value)}
+                                                />
+                                            ) : (item.title)
+                                            }
+                                            </td>
+                                            <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
+                                                <input value={description} className="edit-form"
+                                                    onChange={(event) => setDescription(event.target.value)}
+                                                />
+                                            ) : (item.description)
+                                            }
+                                            </td>
+                                            <td>
+                                                {(currentUser.user.id === item.assignee && item.deleted_by === 'active') ? <select className="form-select" aria-label="size 12 select example" onChange={(e) => handleUpdate(e, item.id)}>
+                                                    <option defaultValue>{item.status}</option>
+                                                    <option value="in-progress">in-progress</option>
+                                                    <option value="completed">completed</option>
+                                                    <option value="deleted">deleted</option>
+                                                </select> : item.status}
+                                            </td>
+                                            <td>{item.creator}</td>
+                                            <td>{item.assignee}</td>
+                                            <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
+                                                <input value={due_date} className="edit-form" type="datetime-local"
+                                                    onChange={(event) => setDueDate(event.target.value)}
+                                                />
+                                            ) : (moment(item.due_date).format('MMMM Do, YYYY, hh:mma'))
+                                            }
+                                            </td>
+                                            <td>     {(JSON.stringify(currentUser.user.id) === item.creator && item.status !== 'deleted') ? (
+                                                inEditMode.status && inEditMode.rowKey === item.id ? (
+                                                    <React.Fragment>
+                                                        <button
+                                                            className={"btn-success btn"}
+                                                            onClick={() => onSave({
+                                                                id: item.id, new_date: due_date,
+                                                                new_title: title, new_description: description
+                                                            })}>
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            className={"btn-secondary btn"}
+                                                            style={{ marginLeft: 8 }}
+                                                            onClick={() => onCancel()}>
+                                                            Cancel
+                                                        </button>
+                                                    </React.Fragment>
+                                                ) : (
+                                                    <button
+                                                        className={"btn-primary btn"}
+                                                        onClick={() => onEdit({
+                                                            id: item.id, current_date: item.due_date,
+                                                            current_title: item.title, current_description: item.description
+                                                        })}>
+                                                        <i className='fa fa-pencil' />
+                                                    </button>
+                                                )) : (<button disabled={true} className="btn btn-secondary"><i className='fa fa-pencil' /></button>)
+                                            }
+                                            </td>
+                                            <td>{(JSON.stringify(currentUser.user.id) === item.creator && item.deleted_by === 'active') ? <button className="btn btn-danger" onClick={(e) => handleDelete(e, item.id)}><i className='fa fa-trash' /></button> :
+                                                <button disabled={true} className="btn btn-secondary"><i className='fa fa-trash' /></button>}</td>
+                                        </tr>
+                                    ]
+                                })}
+                            </tbody> : null}
+                    </table></div> : <div className='spinner-div'><i className='fa fa-circle-o-notch fa-spin spin'></i></div>}
                 </div>
                 <div>
-                    <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleFilter}>
-                        <option defaultValue>Apply filter</option>
-                        <option value='pending'> Pending</option>
-                        <option value='in-progress'> In Progress</option>
-                        <option value='deleted_at'> Deleted Tasks</option>
-                    </select>
+                    <button onClick={() => handlePrevPage()} disabled={currentPage === 1} className='page-btn'><i className='fa fa-angle-double-left page-btn-txt' /></button>
+                    <button disabled={false} className='page-btn'><strong className='page-btn-txt'>{currentPage}</strong></button>
+                    <button onClick={() => handleNextPage()} disabled={currentPage === lastPage} className='page-btn' ><i className='fa fa-angle-double-right page-btn-txt' /></button>
                 </div>
-                <div className="searchItem">
-                    <input className="searchBox" value={searchParam} onChange={(event) => setSearchParam(event.target.value)} placeholder="Search here" />
-                    <button className="btn btn-success" onClick={handleSearch}>Search</button>
-                </div>
-                {(role === 'admin') && <div>
-                    <select className="form-select  selected-form" aria-label="size 3 select example" onChange={handleTasks}>
-                        <option value="yourTask">Your Tasks</option>
-                        <option value='allTasks'> All Tasks</option>
-                    </select>
-                </div>}
+                {selectFlag && <button className='btn btn-primary bulk-btn' onClick={handleBulkDelete}>Delete All</button>}
             </div>
-            { !loading ? <table className="table table-hover table-primary">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Creator</th>
-                        <th>Assignee</th>
-                        <th>Due Date</th>
-                        <th>Actions</th>
-                        <th>Delete</th>
-                    </tr>
-                </thead>
-                {info ?
-                    <tbody>
-                        {info.map((item) => {
-                            return [
-                                <tr key={item}>
-                                    <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
-                                        <input value={title} className="edit-form"
-                                            onChange={(event) => setTitle(event.target.value)}
-                                        />
-                                    ) : (item.title)
-                                    }
-                                    </td>
-                                    <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
-                                        <input value={description} className="edit-form"
-                                            onChange={(event) => setDescription(event.target.value)}
-                                        />
-                                    ) : (item.description)
-                                    }
-                                    </td>
-                                    <td>
-                                        {(currentUser.user.id === item.assignee && item.deleted_by === 'active') ? <select className="form-select" aria-label="size 12 select example" onChange={(e) => handleUpdate(e, item.id)}>
-                                            <option defaultValue>{item.status}</option>
-                                            <option value="in-progress">in-progress</option>
-                                            <option value="completed">completed</option>
-                                            <option value="deleted">deleted</option>
-                                        </select> : item.status}
-                                    </td>
-                                    <td>{item.creator}</td>
-                                    <td>{item.assignee}</td>
-                                    <td> {inEditMode.status && inEditMode.rowKey === item.id ? (
-                                        <input value={due_date} className="edit-form" type="datetime-local"
-                                            onChange={(event) => setDueDate(event.target.value)}
-                                        />
-                                    ) : (moment(item.due_date).format('MMMM Do, YYYY, hh:mma'))
-                                    }
-                                    </td>
-                                    <td>     {(JSON.stringify(currentUser.user.id) === item.creator && item.status !== 'deleted') ? (
-                                        inEditMode.status && inEditMode.rowKey === item.id ? (
-                                            <React.Fragment>
-                                                <button
-                                                    className={"btn-success btn"}
-                                                    onClick={() => onSave({
-                                                        id: item.id, new_date: due_date,
-                                                        new_title: title, new_description: description
-                                                    })}>
-                                                    Save
-                                                </button>
-                                                <button
-                                                    className={"btn-secondary btn"}
-                                                    style={{ marginLeft: 8 }}
-                                                    onClick={() => onCancel()}>
-                                                    Cancel
-                                                </button>
-                                            </React.Fragment>
-                                        ) : (
-                                            <button
-                                                className={"btn-primary btn"}
-                                                onClick={() => onEdit({
-                                                    id: item.id, current_date: item.due_date,
-                                                    current_title: item.title, current_description: item.description
-                                                })}>
-                                                Edit
-                                            </button>
-                                        )) : (<button disabled={true} className="btn btn-primary">Edit</button>)
-                                    }
-                                    </td>
-                                    <td>{(JSON.stringify(currentUser.user.id) === item.creator && item.deleted_by === 'active') ? <button className="btn btn-danger" onClick={(e) => handleDelete(e, item.id)}>Delete</button> :
-                                        <button disabled={true} className="btn btn-danger">Delete</button>}</td>
-                                </tr>
-                            ]
-                        })}
-                    </tbody> : null}
-            </table> : <div className = 'spinner-div'><i className = 'fa fa-circle-o-notch fa-spin spin'></i></div>}
         </div>
     )
 }

@@ -6,7 +6,7 @@ import Input from "react-validation/build/input";
 import Modal from 'react-bootstrap/Modal';
 import { logout } from "../actions/auth";
 import { useNavigate } from "react-router-dom";
-import { getAllUsers, deleteUser, createUser, updateUser, createTask } from "../actions/user";
+import { getAllUsers, deleteUser, createUser, updateUser, createTask ,bulkDeleteUser} from "../actions/user";
 
 const required = (value) => {
   if (!value) {
@@ -35,6 +35,10 @@ const User = () => {
   const [sortMethod, setSortMethod] = useState("");
   const [filterMethod, setFilterMethod] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1000);
+  const [selected, setSelected] = useState([]);
+  const [selectFlag, setSelectFlag] = useState(false);
   //for task
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -82,11 +86,12 @@ const User = () => {
   const handleSort = (e) => {
     setSortMethod(e.target.value);
     setLoading(true);
-    dispatch(getAllUsers(e.target.value, filterMethod, searchParam)).then((response) => {
+    dispatch(getAllUsers(e.target.value, filterMethod, searchParam, 1)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
       setLoading(false);
-      setInfo(response.data);
+      setLastPage(response.data.last_page);
+      setInfo(response.data.data);
     })
       .catch((error) => {
         console.log(error);
@@ -98,11 +103,12 @@ const User = () => {
     console.log(e.target.value);
     setLoading(true);
     setFilterMethod(e.target.value);
-    dispatch(getAllUsers(sortMethod, e.target.value, searchParam)).then((response) => {
+    dispatch(getAllUsers(sortMethod, e.target.value, searchParam, 1)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
       setLoading(false);
-      setInfo(response.data);
+      setLastPage(response.data.last_page);
+      setInfo(response.data.data);
     })
       .catch((error) => {
         console.log(error);
@@ -112,11 +118,12 @@ const User = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setLoading(true);
-    dispatch(getAllUsers(sortMethod, filterMethod, searchParam)).then((response) => {
+    dispatch(getAllUsers(sortMethod, filterMethod, searchParam, 1)).then((response) => {
       console.log(response.data);
       setCreateFlag(false);
       setLoading(false);
-      setInfo(response.data);
+      setLastPage(response.data.last_page);
+      setInfo(response.data.data);
     })
       .catch((error) => {
         console.log(error);
@@ -145,10 +152,12 @@ const User = () => {
 
   // Get all users
   useEffect(() => {
-    UserService.getAllUsers().then((response) => {
+    UserService.getAllUsers(sortMethod, filterMethod, searchParam, currentPage).then((response) => {
       setCreateFlag(false);
       setLoading(false);
-      setInfo(response.data);
+      console.log(response.data);
+      setLastPage(response.data.last_page);
+      setInfo(response.data.data);
     })
       .catch((error) => {
         if (error.response && error.response.status) {
@@ -208,6 +217,51 @@ const User = () => {
   }
   //
 
+  const handleNextPage = (e) => {
+    setLoading(true);
+    dispatch(getAllUsers(sortMethod, filterMethod, searchParam, currentPage+1)).then((response) => {
+      console.log(response.data);
+      setCreateFlag(false);
+      setLoading(false);
+      setInfo(response.data.data);
+      setCurrentPage(currentPage+1);
+    })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      })
+  }
+
+  const handlePrevPage = (e) => {
+    setLoading(true);
+    dispatch(getAllUsers(sortMethod, filterMethod, searchParam, currentPage - 1)).then((response) => {
+      console.log(response.data);
+      setCreateFlag(false);
+      setLoading(false);
+      setInfo(response.data.data);
+      setCurrentPage(currentPage - 1);
+    })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      })
+  }
+
+  const handleSelected = (id) => {
+
+    if(selected.includes(id)) {
+      var index = selected.indexOf(id);
+      setSelected([...selected.slice(0,index),...selected.slice(index+1,selected.length)]);
+      if(selected.length == 1) {setSelectFlag(false);}
+    }
+    else{ setSelected(selected => [...selected, id]);
+     setSelectFlag(true);}
+    console.log(selected);
+  }
+ 
+  const handleBulkDelete = () =>{
+    dispatch(bulkDeleteUser(selected)).then().catch();
+  }
 
   return (
     <div className="container">
@@ -215,7 +269,7 @@ const User = () => {
         <h3 >{currentUser.user.name} , You have Admin Privileges</h3>
       </div>
       <button className="btn btn-primary" onClick={handleCreateForm}>Create User</button>
-      <Modal show={createFlag} onHide={handleClose}>
+      <Modal show={createFlag} onHide={handleClose} aria-labelledby="contained-modal-title-vcenter" centered>
         <Modal.Header closeButton>
           <Modal.Title>Create User</Modal.Title>
         </Modal.Header>
@@ -279,17 +333,17 @@ const User = () => {
             <div className="form-group">
               <button className="btn btn-primary btn-block">Submit</button>
             </div>
-            {message && (
+            {/* {message && (
               <div className="form-group">
                 <div className="alert alert-danger" role="alert">
                   {message}
                 </div>
               </div>
-            )}
+            )} */}
           </Form>
         </Modal.Body>
       </Modal>
-      <Modal show={createTaskFlag} onHide={handleClose}>
+      <Modal show={createTaskFlag} onHide={handleClose} aria-labelledby="contained-modal-title-vcenter" centered>
         <Modal.Header closeButton>
           <Modal.Title>Create Task</Modal.Title>
         </Modal.Header>
@@ -332,80 +386,91 @@ const User = () => {
             <div className="form-group">
               <button className="btn btn-primary btn-block">Submit</button>
             </div>
-            {message && (
+            {/* {message && (
               <div className="form-group">
                 <div className="alert alert-danger" role="alert">
                   {message}
                 </div>
               </div>
-            )}
+            )} */}
           </Form>
         </Modal.Body>
       </Modal>
 
       {/* Above is for creating user by admin */}
+      <div className='row'>
+        <div className='col-md-12'>
+          <div className="div-button">
 
-      <div>
-        <div className="div-button">
-          
-          <div>
-            <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
-              <option defaultValue>Sort By</option>
-              <option value='name'>Name</option>
-              <option value='email'> Email</option>
-              <option value='created_at'> Recent</option>
-            </select>
+            <div>
+              <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleSort}>
+                <option defaultValue>Sort By</option>
+                <option value='name'>Name</option>
+                <option value='email'> Email</option>
+                <option value='created_at'> Recent</option>
+              </select>
+            </div>
+            <div>
+              <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleFilter}>
+                <option defaultValue>Apply filter</option>
+                <option value='admin'> Admin User</option>
+                <option value='normal'> Normal User</option>
+                <option value='deleted_at'> Deleted User</option>
+              </select>
+            </div>
+            <div className="searchItem">
+              <input className="searchBox" value={searchParam} onChange={(event) => setSearchParam(event.target.value)} placeholder="Search here" />
+              <button className="btn btn-success" onClick={handleSearch}>Search</button>
+            </div>
           </div>
-          <div>
-            <select className="form-select selected-form" aria-label="size 3 select example" onChange={handleFilter}>
-              <option defaultValue>Apply filter</option>
-              <option value='admin'> Admin User</option>
-              <option value='normal'> Normal User</option>
-              <option value='deleted_at'> Deleted User</option>
-            </select>
           </div>
-          <div className="searchItem">
-            <input className="searchBox" value={searchParam} onChange={(event) => setSearchParam(event.target.value)} placeholder="Search here" />
-            <button className="btn btn-success" onClick={handleSearch}>Search</button>
-          </div>
+          {!loading ? <div style={{ overflowX: 'scroll' }}>
+            <table className="table table-hover table-dark">
+            <thead className='table-light'>
+              <tr>
+                <th>Select</th>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Created By</th>
+                <th>Deleted By</th>
+                <th>Assign Task</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            {info ? <tbody>
+              {info.map((item) => {
+                return [
+                  <tr key={item}>
+                    <td><input type='checkbox' onChange={()=>handleSelected(item.id)}/></td>
+                    <td>{item.id}</td>
+                    <td><a className='selected-user' href={"/user-tasks?param=" + item.id}>{item.name}</a></td>
+                    <td>{item.email}</td>
+                    <td>
+                      <select className="form-select" aria-label="size 3 select example" onChange={(e) => handleUpdate(e, item.id)}>
+                        <option defaultValue>{item.role}</option>
+                        <option value="admin">admin</option>
+                        <option value="normal">normal</option>
+
+                      </select>
+                    </td>
+                    <td>{item.created_by}</td>
+                    <td>{item.deleted_by}</td>
+                    <td><button className="btn btn-secondary task-button" onClick={(e) => handleCreateTaskForm(e, item.id)}><i className='fa fa-tasks'/></button></td>
+                    <td><button className="btn btn-danger" onClick={(e) => handleDelete(e, item.id)}><i className='fa fa-trash' /></button></td>
+                  </tr>
+                ]
+              })}
+            </tbody> : null}
+          </table></div> : <div className='spinner-div'><i className='fa fa-circle-o-notch fa-spin spin'></i></div>}
+        
+        <div>
+          <button onClick={() => handlePrevPage()} disabled={currentPage === 1} className='page-btn'><i className='fa fa-angle-double-left page-btn-txt' /></button>
+          <button disabled={false} className='page-btn'><strong className='page-btn-txt'>{currentPage}</strong></button>
+          <button onClick={() => handleNextPage()} disabled={currentPage === lastPage} className='page-btn' ><i className='fa fa-angle-double-right page-btn-txt' /></button>
         </div>
-       { !loading ? <table className="table table-hover table-primary">
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Created By</th>
-              <th>Deleted By</th>
-              <th>Assign Task</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          {info ? <tbody>
-            {info.map((item) => {
-              return [
-                <tr key={item}>
-                  <td>{item.id}</td>
-                  <td><a className ='selected-user' href={"/user-tasks?param="+item.id}>{item.name}</a></td>
-                  <td>{item.email}</td>
-                  <td>
-                    <select className="form-select" aria-label="size 3 select example" onChange={(e) => handleUpdate(e, item.id)}>
-                      <option defaultValue>{item.role}</option>
-                      <option value="admin">admin</option>
-                      <option value="normal">normal</option>
-
-                    </select>
-                  </td>
-                  <td>{item.created_by}</td>
-                  <td>{item.deleted_by}</td>
-                  <td><button className="btn btn-secondary task-button" onClick={(e) => handleCreateTaskForm(e, item.id)}>+</button></td>
-                  <td><button className="btn btn-danger" onClick={(e) => handleDelete(e, item.id)}>Delete</button></td>
-                </tr>
-              ]
-            })}
-          </tbody> : null}
-        </table> : <div className = 'spinner-div'><i className = 'fa fa-circle-o-notch fa-spin spin'></i></div>}
+        {selectFlag && <button className='btn btn-primary bulk-btn' onClick={handleBulkDelete}>Delete All</button>}
       </div>
     </div>
   );

@@ -40,7 +40,6 @@ const App = () => {
     UserService.listNotifs().then((response)=>{
     setInfo(response.data);
     Pusher.logToConsole = true;
-
     var pusher = new Pusher('47e061ae680fadb96900', {
       cluster: 'ap2'
     });

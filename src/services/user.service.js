@@ -2,8 +2,8 @@ import axios from "axios";
 import authHeader from "./auth-header";
 const API_URL = "http://localhost:8000";
 
-const getAllUsers = (sortMethod,filterMethod,searchParam) => {
-  return axios.get(API_URL+"/users", {headers : authHeader(),params :{sort : sortMethod, filter : filterMethod, searchParam : searchParam }})
+const getAllUsers = (sortMethod,filterMethod,searchParam,currPage) => {
+  return axios.get(API_URL+"/users", {headers : authHeader(),params :{sort : sortMethod, filter : filterMethod, searchParam : searchParam, page : currPage}})
 };
 const getUser = () => {
   return axios.get(API_URL + "/me", { headers: authHeader() });
@@ -24,20 +24,24 @@ const createUser = (name,email,password,password_confirmation,role) =>{
   return axios.post(API_URL+'/create' ,{name,email,password,password_confirmation,role}, {headers : authHeader()});
 }
 
+const bulkDeleteUser = (arrayId) => {
+  return axios.delete(API_URL+'/bulk-delete',{headers : authHeader(), params : {arrayId : arrayId}});
+}
+
 // for task management
 const createTask = (title,description,assignee,due_date) =>{
   return axios.post(API_URL+'/create-task', {title,description,assignee,due_date},{headers : authHeader()});
 }
 
+const getMyTasks = () => {
+  return axios.get(API_URL + '/my-tasks', {headers : authHeader()});
+}
 const getUserTask = (id) => {
   return axios.get(API_URL+'/tasks/'+id, {headers : authHeader()});
 }
 
-const showMyTasks = () => {
-    return axios.get(API_URL + "/tasks",{headers : authHeader()});
-}
-const showAllTasks = (sortMethod,filterMethod,searchParam) => {
-  return axios.get(API_URL+"/all-tasks", {headers : authHeader(),params :{sort : sortMethod, filter : filterMethod, searchParam : searchParam }});
+const showAllTasks = (sortMethod,filterMethod,searchParam,currentPage,id) => {
+  return axios.get(API_URL+"/all-tasks", {headers : authHeader(),params :{sort : sortMethod, filter : filterMethod, searchParam : searchParam , page : currentPage, id : id}});
 }
 
 const updateStatus = (id,status) => {
@@ -49,6 +53,10 @@ const deleteTask = (id) => {
 }
 const editTask = (id,title,description,due_date) => {
   return axios.put(API_URL + "/edit-task/"+id, {title : title, description : description, due_date : due_date}, {headers : authHeader()});
+}
+
+const bulkDeleteTask = (arrayId) => {
+  return axios.delete(API_URL+'/tasks/bulk-delete',{headers : authHeader(), params : {arrayId : arrayId}});
 }
 
 const listNotifs = () => {
@@ -71,12 +79,14 @@ export default {
   createUser,
   updateUser,
   createTask,
+  getMyTasks,
+  bulkDeleteUser,
   getUserTask,
-  showMyTasks,
   showAllTasks,
   updateStatus,
   deleteTask,
   editTask,
+  bulkDeleteTask,
   listNotifs,
   deleteNotif,
   clearNotif,

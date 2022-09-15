@@ -45,12 +45,6 @@ export default function  (state = initialState, action)  {
             isLoggedIn:true,
             user : payload.user
         };
-    // case UPDATE: 
-    //     return {
-    //       ...state,
-    //       isLoggedIn: true,
-    //       user : payload.user
-    //     }
     default: 
       return state;
     }

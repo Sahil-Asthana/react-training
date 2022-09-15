@@ -21,6 +21,7 @@
     "react-scripts": "5.0.1",
     "react-toastify": "^9.0.8",
     "react-validation": "^3.0.7",
+    "react-vertical-timeline-component": "^3.5.2",
     "redux": "^4.2.0",
     "redux-thunk": "^2.4.1",
     "timelinejs": "^2.35.6",

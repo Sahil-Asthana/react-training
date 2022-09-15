@@ -6,6 +6,7 @@ label {
   max-width: 350px !important;
   padding: 40px 40px;
 }
+
 .card {
   background-color: #f7f7f7;
   padding: 20px 25px 30px;
@@ -73,7 +74,7 @@ button {
   flex-direction: row;
 }
 .searchItem{
-  margin-left: 600px;
+  margin-left: auto;
   margin-right: 30px;
 }
 .searchBox {
@@ -88,14 +89,7 @@ button {
   margin-left: 20px;
   border-radius: 100%;
 }
-/* .notification-bell {
-  margin-top: 8px;
-  height : 30px;
-  width : 30px;
-} */
-/* .bell-icon{
-  border-radius: 100%;
-} */
+
 .dropdown-toggle::after{
   display : none;
 }
@@ -132,7 +126,7 @@ button {
 }
 .selected-user {
   text-decoration: none;
-  color: black;
+  color: rgb(251, 245, 245);
 }
 .spinner-div {
   margin-top: 100px;
@@ -145,3 +139,33 @@ button {
   font-size : 100px;
   text-align: center;
 }
+.page-btn {
+  border-radius: 100%;
+  background-color:lightblue;
+  border-style: none;
+}
+.page-btn-txt {
+  padding: 4px;
+}
+.modal .modal-content {
+  background-color: rgb(152, 165, 174);
+}
+.home-div {
+  display: flex;
+  flex-direction: row;
+}
+.timeline-div{
+  height: 300px;
+  width: 50%;
+  overflow-y: scroll;
+  background-color: rgba(241, 232, 232, 0.844);
+  margin:auto;
+}
+.vertical-timeline-element-content.bounce-in {
+  width: 20rem;
+}
+
+
+
+
+
